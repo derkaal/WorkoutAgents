@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "perplexityai": {
+      "url": "https://mcp.composio.dev/composio/server/replace_with_your_composio_server_id",
+      "alwaysAllow": [
+        "PERPLEXITYAI_PERPLEXITY_AI_SEARCH"
+      ]
+    }
+  }
+}
