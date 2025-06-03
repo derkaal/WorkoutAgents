@@ -17,9 +17,10 @@ def check_progress_with_validation_agent(
     """
     Consults the Rule-Based Validation Agent to get a factual check on whether
     the provided workout progress data (e.g., workouts completed vs. target)
-    aligns with the established, hard-coded workout schedule rules. Input is a
+    aligns with the established workout schedule rules. Input is a
     dictionary of progress data. Returns a
-    dictionary with validation results including 'is_valid' and a 'reason'.
+    dictionary with validation results including 'valid' status, 'validated_data',
+    and 'workout_goals' containing the target number of workouts and calculation method.
     """
     # Import validation_agent_executor from the module where it's defined
     # This assumes validation_agent_executor is available in the global scope

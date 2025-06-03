@@ -11,6 +11,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from backend.validation_tool import validate_workout_plan_with_executor, set_validation_agent_executor
+from backend.workout_history_tool import check_workout_history
 from backend.rule_based_validation_agent import RuleBasedValidationAgent
 from langchain.agents import AgentExecutor as LangchainAgentExecutor
 from dotenv import load_dotenv
@@ -40,7 +41,7 @@ set_validation_agent_executor(validation_agent_executor)
 llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
 # Step 3: Create a tools list
-tools = [validate_workout_plan_with_executor]
+tools = [validate_workout_plan_with_executor, check_workout_history]
 
 # Step 4: Create a system prompt
 SYSTEM_PROMPT = """
@@ -75,6 +76,12 @@ For each exercise, specify:
 - Number of sets and reps or duration
 - Brief form tips
 - Rest periods between sets
+
+WORKOUT HISTORY CHECK:
+Before creating a workout plan, you MUST use the check_workout_history tool to determine if a rest day should be recommended.
+- If the user has worked out for 3 or more consecutive days, recommend a rest day
+- If the user has reached their weekly goal of 4 workouts, consider suggesting a lighter workout
+- Consider the warnings and recommendations from the workout history check
 
 MANDATORY VALIDATION STEP:
 After creating your workout plan, you MUST use the validate_workout_plan_with_executor tool to validate it.

@@ -8,7 +8,7 @@ using the Trystero agent.
 import base64
 from fastapi import APIRouter, HTTPException
 from models.schemas import ProgressAnalysisRequest, ProgressAnalysisResponse
-from agents.trystero import trystero_agent_executor
+from agents.trystero import validation_agent
 from services.eleven_labs_client import ElevenLabsClient
 from utils.text_cleaner import clean_text_for_tts
 
@@ -72,7 +72,6 @@ async def analyze_progress(request_data: ProgressAnalysisRequest) -> ProgressAna
     try:
         # TEMPORARY WORKAROUND: Implement a direct mock response instead of using the agent
         # This will help us test the API endpoint while we fix the underlying agent issue
-        import json
         import traceback
         
         progress_dict = dict(request_data.progress_data)
@@ -80,23 +79,44 @@ async def analyze_progress(request_data: ProgressAnalysisRequest) -> ProgressAna
         
         # Mock implementation for testing
         try:
-            # Calculate completion percentages - use values from frontend
-            # For demonstration purposes, assume 4 weekly workouts as target (can be adjusted)
-            target_workouts = 4  # Default target per activity type
+            # Get workout goal rules from validation agent
+            workout_goals = validation_agent.instance_rules.get('workout_goals', {})
+            weekly_target = workout_goals.get('weekly_target', 4)  # Default to 4 if not specified
+            calculation_method = workout_goals.get('calculation_method', 'any_type')
             
-            strength_completion = (progress_dict.get("strength_done", 0) /
-                                   target_workouts) * 100
+            # Get individual workout counts
+            strength_done = progress_dict.get("strength_done", 0)
+            yoga_done = progress_dict.get("yoga_done", 0)
+            runs_done = progress_dict.get("runs_done", 0)
             
-            yoga_completion = (progress_dict.get("yoga_done", 0) /
-                               target_workouts) * 100
+            # Calculate total workouts completed based on calculation method
+            if calculation_method == 'any_type':
+                # Any workout type counts toward the total
+                total_workouts = strength_done + yoga_done + runs_done
+            else:
+                # Future implementation could support different calculation methods
+                # For now, default to the 'any_type' method
+                total_workouts = strength_done + yoga_done + runs_done
             
-            runs_completion = (progress_dict.get("runs_done", 0) /
-                               target_workouts) * 100
+            # Calculate overall completion percentage (capped at 100%)
+            overall_completion = min((total_workouts / weekly_target) * 100, 100)
             
-            # Generate mock analysis
+            # Calculate distribution percentages
+            if total_workouts > 0:
+                strength_distribution = (strength_done / total_workouts) * 100
+                yoga_distribution = (yoga_done / total_workouts) * 100
+                runs_distribution = (runs_done / total_workouts) * 100
+            else:
+                strength_distribution = 0
+                yoga_distribution = 0
+                runs_distribution = 0
+            
+            # Generate mock analysis with new calculation approach
             trystero_feedback = (
-                f"Progress analysis: You've completed {strength_completion:.0f}% of strength workouts, "
-                f"{yoga_completion:.0f}% of yoga sessions, and {runs_completion:.0f}% of targeted runs.\n\n"
+                f"Progress analysis: You've completed {overall_completion:.0f}% of your weekly goal "
+                f"({total_workouts} of {weekly_target} workouts).\n\n"
+                f"Workout distribution: {strength_distribution:.0f}% strength, "
+                f"{yoga_distribution:.0f}% yoga, and {runs_distribution:.0f}% running.\n\n"
                 f"Notable patterns: {progress_dict.get('notes', 'No notes provided.')}"
             )
             
@@ -151,6 +171,16 @@ async def analyze_progress(request_data: ProgressAnalysisRequest) -> ProgressAna
                         "strength": strength_done,
                         "yoga": yoga_done,
                         "cardio": runs_done
+                    },
+                    "progress": {
+                        "overall_completion": overall_completion,
+                        "total_workouts": total_workouts,
+                        "weekly_target": weekly_target,
+                        "distribution": {
+                            "strength": strength_distribution,
+                            "yoga": yoga_distribution,
+                            "runs": runs_distribution
+                        }
                     },
                     "recommendations": recommendations.strip()
                 }

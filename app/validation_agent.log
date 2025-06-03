@@ -1,4 +1,0 @@
-2025-06-01 20:50:13,066 - httpx - INFO - HTTP Request: POST https://api.mistral.ai/v1/chat/completions "HTTP/1.1 200 OK"
-2025-06-01 20:50:16,621 - app.services.eleven_labs_client - INFO - Loading environment variables from: C:\Users\adonath\Documents\WorkoutAgents\.env
-2025-06-01 20:50:16,628 - app.services.eleven_labs_client - INFO - Loaded API key: sk_2*******************************************e0fd
-2025-06-01 20:50:29,271 - httpx - INFO - HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/QMJTqaMXmGnG8TCm8WQG "HTTP/1.1 200 OK"

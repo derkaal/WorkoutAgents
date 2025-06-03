@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
 from backend.agent_tools import check_progress_with_validation_agent
+from backend.workout_history_tool import check_workout_history
 from backend.rule_based_validation_agent import RuleBasedValidationAgent
 from langchain.agents import AgentExecutor as LangchainAgentExecutor
 
@@ -36,7 +37,7 @@ validation_agent_executor = LangchainAgentExecutor.from_agent_and_tools(
 llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
 
 # Step 3: Create a tools list
-tools = [check_progress_with_validation_agent]
+tools = [check_progress_with_validation_agent, check_workout_history]
 
 # Step 4: Create a simplified system prompt as a string
 SYSTEM_PROMPT = """
@@ -61,9 +62,16 @@ When analyzing workout progress data, do the following:
    - Example: If the data is {"completed_strength": 2}, use:
      progress_data={"completed_strength": 2}
    - The tool will handle the data format appropriately
-2. Assess completion rates against targets
-3. Identify patterns or emerging trends
-4. Provide structured feedback
+   - The tool will return workout goal rules including weekly targets
+2. Consult the validation agent's response for weekly workout targets and calculation rules
+3. Use the check_workout_history tool to retrieve workout history data including:
+   - Consecutive workout days
+   - Weekly workout count vs. target
+   - Whether rest is recommended
+4. Assess completion rates against targets (not hardcoded values)
+5. Identify patterns or emerging trends
+6. Consider rest recommendations in your analysis
+7. Provide structured feedback
 
 OUTPUT FORMAT:
 1. Brief feedback section with clear observations

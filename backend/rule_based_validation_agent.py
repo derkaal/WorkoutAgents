@@ -12,7 +12,14 @@ import json
 from typing import Dict, Any, List, Tuple, ClassVar
 from pydantic import Field, ValidationError
 from datetime import datetime
-from models.schemas import WorkoutPlan, ProgressAnalysisRequest
+# Fix import path issue
+try:
+    from app.models.schemas import WorkoutPlan, ProgressAnalysisRequest
+except ImportError:
+    try:
+        from backend.app.models.schemas import WorkoutPlan, ProgressAnalysisRequest
+    except ImportError:
+        from models.schemas import WorkoutPlan, ProgressAnalysisRequest
 # Fix import issue - BaseSingleActionAgent might be in a different module
 # Try alternative import paths
 try:
@@ -234,7 +241,15 @@ class RuleBasedValidationAgent(BaseSingleActionAgent):
     """
     
     # Define class variables for Pydantic with proper type annotations
-    validation_rules: ClassVar[Dict[str, Any]] = {}
+    validation_rules: ClassVar[Dict[str, Any]] = {
+        'workout_goals': {
+            'weekly_target': 4,  # Target number of workouts per week
+            'calculation_method': 'any_type',  # 'any_type' means ANY workout types count toward the total
+            'workout_types': ['strength', 'yoga', 'runs'],  # The types of workouts tracked
+            'max_consecutive_days': 3,  # Maximum recommended consecutive workout days
+            'rest_recommendation': True,  # Whether to recommend rest days
+        }
+    }
     validation_metrics: ClassVar[Dict[str, int]] = {
         'total_validations': 0,
         'successful_validations': 0,
@@ -613,13 +628,17 @@ class RuleBasedValidationAgent(BaseSingleActionAgent):
             # So we need to wrap the incoming data
             ProgressAnalysisRequest(progress_data=progress_data)
             
-            # If validation passes, return success
+            # Add workout goal rules to the validated data
+            workout_goals = self.instance_rules.get('workout_goals', {})
+            
+            # If validation passes, return success with the workout goals included
             return {
                 'status': 'success',
                 'message': 'Progress tracking validation successful',
                 'valid': True,
                 'warnings': warnings,
-                'validated_data': progress_data # Return the validated data
+                'validated_data': progress_data, # Return the validated data
+                'workout_goals': workout_goals   # Include the workout goals in the response
             }
 
         except ValidationError as e:

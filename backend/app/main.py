@@ -62,9 +62,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create data directory for workout history if it doesn't exist
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+    print(f"Created data directory at {data_dir}")
+
+# Import workout history router
+from routers.workout_history import router as workout_history_router
+
 # Include routers
 app.include_router(workout_router)
 app.include_router(progress_router)
+app.include_router(workout_history_router)
 
 
 @app.get("/")
